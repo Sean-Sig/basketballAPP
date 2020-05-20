@@ -124,7 +124,6 @@ def update_player(playerId):
     response.headers['Location'] = "/players/" + str(playerId)
     return response
 
-
 # DELETE
 @app.route('/players/<string:playerId>', methods=['DELETE'])
 def delete_player(playerId):
@@ -134,6 +133,19 @@ def delete_player(playerId):
 
     invalidPlayerObjectErrorMsg = {
         "error": "Player with the playerId number that was provided was not found, so therefore unable to delete player"
+    }
+    response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=404, mimetype='application/json')
+    return response
+
+# DELETE
+@app.route('/teams/<string:teamId>', methods=['DELETE'])
+def delete_team(teamId):
+    if (Team.delete_team(teamId)):
+        response = Response("", status=204)
+        return response
+
+    invalidPlayerObjectErrorMsg = {
+        "error": "Team with the teamId number that was provided was not found, so therefore unable to delete team"
     }
     response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=404, mimetype='application/json')
     return response

@@ -31,3 +31,8 @@ class Team(db.Model):
 
     def get_team(_teamId):
         return Team.json(Team.query.filter_by(teamId=_teamId).first())
+
+    def delete_team(_teamId):
+        is_successful = Team.query.filter_by(teamId=_teamId).delete()
+        db.session.commit()
+        return bool(is_successful)
