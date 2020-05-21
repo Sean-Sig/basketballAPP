@@ -10,6 +10,7 @@ from functools import wraps
 players = Player.get_all_players()
 teams = Team.get_all_teams()
 stats = Stats.get_all_stats()
+games = Games.get_all_games()
 
 app.config['SECRET_KEY'] = 'meow'
 
@@ -59,9 +60,38 @@ def token_required(f):
 
 # GET
 @app.route("/players")
-@token_required
+# @token_required
 def get_players():
     return jsonify({'players': Player.get_all_players()})
+
+# GET
+@app.route("/games")
+# @token_required
+def get_games():
+    return jsonify({'games': Games.get_all_games()})
+
+# GET
+@app.route("/gameplayers/<string:gameId>")
+# @token_required
+def get_game_player(gameId):
+    return jsonify({'team1': Games.get_players_of_game(gameId)})
+
+@app.route("/games", methods=['POST'])
+def add_game():
+    request_data = request.get_json()
+    Games.add_new_game(request_data['gameName'])
+    response = Response("", status=201, mimetype='application/json')
+    response.headers['Location'] = "/games/" + str(request_data['gameName'])
+    return response
+
+@app.route("/playerToGame", methods=['POST'])
+def add_player_game():
+    request_data = request.get_json()
+    Games.add_player_to_game(request_data['gameId'], request_data['playerId'])
+    response = Response("", status=201, mimetype='application/json')
+    response.headers['Location'] = "/playerToGame/" + str(request_data['gameId'])
+    return response
+
 
 # GET player by playerId
 @app.route('/players/<string:playerId>')
@@ -109,7 +139,7 @@ def add_stats():
 # GET stats by playerId
 @app.route('/stats/<string:playerId>')
 def get_stats_by_playerId(playerId):
-    return_value = Stats.get_stats(playerId)
+    return_value = Stats.get_player_stats(playerId)
     return jsonify(return_value)
 
 # PUT

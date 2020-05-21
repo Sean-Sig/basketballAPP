@@ -6,6 +6,42 @@ from settings import app
 
 db = SQLAlchemy(app)
 
+subs = db.Table('subs',
+    db.Column('playerId', db.String, db.ForeignKey('players.playerId')),
+    db.Column('gameId', db.String, db.ForeignKey('games.gameId'))
+)
+
+class Games(db.Model):
+    __tablename__ = 'games'
+    id = db.Column(db.Integer, primary_key=True)
+    gameId = db.Column(db.String(80), nullable=False)
+    gameName = db.Column(db.String(80), nullable=False)
+
+    def json(self):
+        return {
+            'gameId': self.gameId,
+            'gameName': self.gameName
+            }
+
+    def add_new_game(_gameName):
+        _gameId = 'gameId=' + str(uuid.uuid4())
+        new_game = Games(gameId=_gameId, gameName=_gameName)
+        db.session.add(new_game)
+        db.session.commit()
+
+    def get_all_games():
+        return [Games.json(game) for game in Games.query.all()]
+
+    def add_player_to_game(_gameId, _playerId):
+        game = Games.query.filter_by(gameId=_gameId).first()
+        player = Player.query.filter_by(playerId=_playerId).first()
+        game.currentPlayers.append(player)
+        db.session.commit()
+
+    def get_players_of_game(_gameId):
+        game = Games.query.filter_by(gameId=_gameId).first()
+        return [Player.json(player) for player in game.currentPlayers]
+
 class Player(db.Model):
     __tablename__ = 'players'
     id = db.Column(db.Integer, primary_key=True)
@@ -17,6 +53,7 @@ class Player(db.Model):
     height = db.Column(db.Integer)
     weight = db.Column(db.Integer)
     playerStats = db.relationship('Stats', backref='owner')
+    gameCenter = db.relationship('Games', secondary=subs, backref=db.backref('currentPlayers', lazy='dynamic'))
 
     def json(self):
         return {
@@ -93,14 +130,14 @@ class Stats(db.Model):
     def json(self):
         return {
             'points': self.points
-            }
+        }
 
     def get_all_stats():
         return [Stats.json(stat) for stat in Stats.query.all()]
 
-    def get_stats(_playerId):
+    def get_player_stats(_playerId):
         player_to_find = Player.query.filter_by(playerId=_playerId).first()
-        return [Stats.json(stat) for stat in player_to_find.playerStats]
+        return ['playerProfile',[Player.json(player_to_find)]] + ['stats', [Stats.json(stat) for stat in player_to_find.playerStats]]
 
     def add_player_stats(_points, _stat_owner):
         new_stats = Stats(points=_points, stat_owner=_stat_owner)
