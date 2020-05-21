@@ -9,6 +9,7 @@ from functools import wraps
 
 players = Player.get_all_players()
 teams = Team.get_all_teams()
+stats = Stats.get_all_stats()
 
 app.config['SECRET_KEY'] = 'meow'
 
@@ -97,6 +98,19 @@ def add_player():
         response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=400, mimetype='application/json');
         return response
 
+@app.route("/stats", methods=['POST'])
+def add_stats():
+    request_data = request.get_json()
+    Stats.add_player_stats(request_data['points'], request_data['owner'])
+    response = Response("", status=201, mimetype='application/json')
+    response.headers['Location'] = "/stats/" + str(request_data['owner'])
+    return response
+
+# GET stats by playerId
+@app.route('/stats/<string:playerId>')
+def get_stats_by_playerId(playerId):
+    return_value = Stats.get_stats(playerId)
+    return jsonify(return_value)
 
 # PUT
 # @app.route('/players/<string:playerId>', methods=['PUT'])
@@ -122,6 +136,17 @@ def update_player(playerId):
 
     response = Response("", status=204)
     response.headers['Location'] = "/players/" + str(playerId)
+    return response
+
+# PATCH
+@app.route('/teams/<string:teamId>', methods=['PATCH'])
+def update_team(teamId):
+    request_data = request.get_json()
+    if ("playerIds" in request_data):
+        Team.add_team_members(teamId, request_data['playerIds'])
+
+    response = Response("", status=204)
+    response.headers['Location'] = "/teams/" + str(teamId)
     return response
 
 # DELETE

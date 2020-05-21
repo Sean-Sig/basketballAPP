@@ -36,3 +36,9 @@ class Team(db.Model):
         is_successful = Team.query.filter_by(teamId=_teamId).delete()
         db.session.commit()
         return bool(is_successful)
+
+    def add_team_members(_teamId, _playerIds):
+        player_to_update = Team.query.filter_by(teamId=_teamId).first()
+        updated_players = _playerIds + player_to_update.playerIds
+        player_to_update.playerIds = updated_players
+        db.session.commit()

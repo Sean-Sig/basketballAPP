@@ -7,7 +7,7 @@ from settings import app
 db = SQLAlchemy(app)
 
 class Player(db.Model):
-    __tablename__ = 'players3'
+    __tablename__ = 'players'
     id = db.Column(db.Integer, primary_key=True)
     playerId = db.Column(db.String(80), nullable=False)
     firstName = db.Column(db.String(80), nullable=False)
@@ -16,6 +16,7 @@ class Player(db.Model):
     position = db.Column(db.String(80))
     height = db.Column(db.Integer)
     weight = db.Column(db.Integer)
+    playerStats = db.relationship('Stats', backref='owner')
 
     def json(self):
         return {
@@ -82,3 +83,32 @@ class Player(db.Model):
             'weight': self.weight
         }
         return json.dumps(player_object)
+
+class Stats(db.Model):
+    __tablename__ = 'stats'
+    id = db.Column(db.Integer, primary_key=True)
+    points = db.Column(db.Integer)
+    stat_owner = db.Column(db.String(80), db.ForeignKey('players.playerId'), nullable=False)
+
+    def json(self):
+        return {
+            'points': self.points
+            }
+
+    def get_all_stats():
+        return [Stats.json(stat) for stat in Stats.query.all()]
+
+    def get_stats(_playerId):
+        player_to_find = Player.query.filter_by(playerId=_playerId).first()
+        return [Stats.json(stat) for stat in player_to_find.playerStats]
+
+    def add_player_stats(_points, _stat_owner):
+        new_stats = Stats(points=_points, stat_owner=_stat_owner)
+        db.session.add(new_stats)
+        db.session.commit()
+
+    def __repr__(self):
+        stat_object = {
+            'points': self.points
+        }
+        return json.dumps(stat_object)
