@@ -3,12 +3,10 @@ from PlayerModel import *
 from settings import *
 import json
 from UserModel import User
-from TeamModel import *
 import jwt, datetime
 from functools import wraps
 
 players = Player.get_all_players()
-teams = Team.get_all_teams()
 stats = Stats.get_all_stats()
 games = Games.get_all_games()
 
