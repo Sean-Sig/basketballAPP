@@ -168,6 +168,11 @@ def get_stats_by_playerId(playerId):
     return_value = Stats.get_player_stats(playerId)
     return jsonify(return_value)
 
+@app.route('/playerStatsGame')
+def get_stats_of_player_game():
+    request_data = request.get_json()
+    return_value = Stats.get_player_stats_in_game(request_data['playerId'], request_data['gameId'])
+    return jsonify(return_value)
 # MAIN
 if __name__ == "__main__":
     app.run(port=5000)

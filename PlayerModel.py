@@ -144,8 +144,16 @@ class Stats(db.Model):
         db.session.add(new_stats)
         db.session.commit()
 
+    def get_player_stats_in_game(_playerId, _gameId):
+        player_to_find = Player.query.filter_by(playerId=_playerId).first()
+        for i in player_to_find.playerStats:
+            if i.game_owner == _gameId:
+                return ['playerProfile',[Player.json(player_to_find)]] + ['stats', [Stats.json(i)]]
+
     def __repr__(self):
         stat_object = {
+            'game_owner': self.game_owner,
+            'stat_owner': self.stat_owner,
             'points': self.points
         }
         return json.dumps(stat_object)
