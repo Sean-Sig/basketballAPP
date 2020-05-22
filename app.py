@@ -14,6 +14,7 @@ games = Games.get_all_games()
 
 app.config['SECRET_KEY'] = 'meow'
 
+# CREATE ACCOUNT POST
 @app.route('/createUser', methods=['POST'])
 def create_user():
     request_data = request.get_json()
@@ -30,6 +31,14 @@ def create_user():
         response = Response(json.dumps(invalidUserObjectErrorMsg), status=400, mimetype='application/json');
         return response
 
+# VALIDATE CREATE USER
+def validUserObject(userObject):
+    if ("username" in userObject and "password" in userObject):
+        return True
+    else:
+        return False
+
+# LOGIN
 @app.route('/login', methods=['POST'])
 def get_token():
     request_data = request.get_json()
@@ -45,6 +54,7 @@ def get_token():
     else:
         return Resonse('', 401, mimetype='application/json')
 
+# CREATE TOKEN
 def token_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -57,25 +67,19 @@ def token_required(f):
     return wrapper
 
 
-
-# GET
+# GET ALL PLAYERS
 @app.route("/players")
 # @token_required
 def get_players():
     return jsonify({'players': Player.get_all_players()})
 
-# GET
-@app.route("/games")
-# @token_required
-def get_games():
-    return jsonify({'games': Games.get_all_games()})
+# GET PLAYER BY playerId
+@app.route('/players/<string:playerId>')
+def get_player_by_playerId(playerId):
+    return_value = Player.get_player(playerId)
+    return jsonify(return_value)
 
-# GET
-@app.route("/gameplayers/<string:gameId>")
-# @token_required
-def get_game_player(gameId):
-    return jsonify({'team1': Games.get_players_of_game(gameId)})
-
+# CREATE GAME
 @app.route("/games", methods=['POST'])
 def add_game():
     request_data = request.get_json()
@@ -84,6 +88,13 @@ def add_game():
     response.headers['Location'] = "/games/" + str(request_data['gameName'])
     return response
 
+# GET ALL GAMES
+@app.route("/games")
+# @token_required
+def get_games():
+    return jsonify({'games': Games.get_all_games()})
+
+# ADD PLAYER TO GAME
 @app.route("/playerToGame", methods=['POST'])
 def add_player_game():
     request_data = request.get_json()
@@ -92,26 +103,14 @@ def add_player_game():
     response.headers['Location'] = "/playerToGame/" + str(request_data['gameId'])
     return response
 
+# GET PLAYERS BY gameId
+@app.route("/gameplayers/<string:gameId>")
+# @token_required
+def get_game_player(gameId):
+    return jsonify({'team1': Games.get_players_of_game(gameId)})
 
-# GET player by playerId
-@app.route('/players/<string:playerId>')
-def get_player_by_playerId(playerId):
-    return_value = Player.get_player(playerId)
-    return jsonify(return_value)
 
-def validUserObject(userObject):
-    if ("username" in userObject and "password" in userObject):
-        return True
-    else:
-        return False
-
-# POST and validation
-def validPlayerObject(playerObject):
-    if ("firstName" in playerObject and "lastName" in playerObject and "jerseyNumber" and "position" and "height" and "weight" in playerObject):
-        return True
-    else:
-        return False
-
+# CREATE PLAYER
 @app.route("/players", methods=['POST'])
 def add_player():
     request_data = request.get_json()
@@ -128,30 +127,14 @@ def add_player():
         response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=400, mimetype='application/json');
         return response
 
-@app.route("/stats", methods=['POST'])
-def add_stats():
-    request_data = request.get_json()
-    Stats.add_player_stats(request_data['points'], request_data['owner'])
-    response = Response("", status=201, mimetype='application/json')
-    response.headers['Location'] = "/stats/" + str(request_data['owner'])
-    return response
+# VALIDATE CREATING PLAYER OBJECT
+def validPlayerObject(playerObject):
+    if ("firstName" in playerObject and "lastName" in playerObject and "jerseyNumber" and "position" and "height" and "weight" in playerObject):
+        return True
+    else:
+        return False
 
-# GET stats by playerId
-@app.route('/stats/<string:playerId>')
-def get_stats_by_playerId(playerId):
-    return_value = Stats.get_player_stats(playerId)
-    return jsonify(return_value)
-
-# PUT
-# @app.route('/players/<string:playerId>', methods=['PUT'])
-# def replace_player(playerId):
-#     request_data = request.get_json()
-#     Player.replace_player(isbn, request_data['name'], request_data['price'])
-#     response = Response("", status=204)
-#     return response
-
-
-# PATCH
+# PATCH PLAYER
 @app.route('/players/<string:playerId>', methods=['PATCH'])
 def update_player(playerId):
     request_data = request.get_json()
@@ -168,18 +151,7 @@ def update_player(playerId):
     response.headers['Location'] = "/players/" + str(playerId)
     return response
 
-# PATCH
-@app.route('/teams/<string:teamId>', methods=['PATCH'])
-def update_team(teamId):
-    request_data = request.get_json()
-    if ("playerIds" in request_data):
-        Team.add_team_members(teamId, request_data['playerIds'])
-
-    response = Response("", status=204)
-    response.headers['Location'] = "/teams/" + str(teamId)
-    return response
-
-# DELETE
+# DELETE PLAYER BY playerId
 @app.route('/players/<string:playerId>', methods=['DELETE'])
 def delete_player(playerId):
     if (Player.delete_player(playerId)):
@@ -192,41 +164,11 @@ def delete_player(playerId):
     response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=404, mimetype='application/json')
     return response
 
-# DELETE
-@app.route('/teams/<string:teamId>', methods=['DELETE'])
-def delete_team(teamId):
-    if (Team.delete_team(teamId)):
-        response = Response("", status=204)
-        return response
-
-    invalidPlayerObjectErrorMsg = {
-        "error": "Team with the teamId number that was provided was not found, so therefore unable to delete team"
-    }
-    response = Response(json.dumps(invalidPlayerObjectErrorMsg), status=404, mimetype='application/json')
-    return response
-
-
-# GET all teams
-@app.route("/teams")
-def get_teams():
-    return jsonify({'teams': Team.get_all_teams()})
-
-# GET team by teamId
-# hereree
-@app.route('/teams/<string:teamId>')
-def get_team_by_teamId(teamId):
-    return_value = Team.get_team(teamId)
+# GET stats by playerId
+@app.route('/stats/<string:playerId>')
+def get_stats_by_playerId(playerId):
+    return_value = Stats.get_player_stats(playerId)
     return jsonify(return_value)
-
-# POST create a team
-@app.route('/createTeam', methods=['POST'])
-def create_team():
-    request_data = request.get_json()
-
-    Team.add_team(request_data['teamName'], request_data['playerIds'])
-    response = Response("", status=201, mimetype='application/json')
-    response.headers['Location'] = "/teams/" + str(request_data['teamName'])
-    return response
 
 # MAIN
 if __name__ == "__main__":

@@ -16,6 +16,7 @@ class Games(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     gameId = db.Column(db.String(80), nullable=False)
     gameName = db.Column(db.String(80), nullable=False)
+    playerStats = db.relationship('Stats', backref='statOwner')
 
     def json(self):
         return {
@@ -35,6 +36,7 @@ class Games(db.Model):
     def add_player_to_game(_gameId, _playerId):
         game = Games.query.filter_by(gameId=_gameId).first()
         player = Player.query.filter_by(playerId=_playerId).first()
+        Stats.add_player_stats(_playerId, _gameId)
         game.currentPlayers.append(player)
         db.session.commit()
 
@@ -102,12 +104,6 @@ class Player(db.Model):
         player_to_update = Player.query.filter_by(playerId=_playerId).first()
         player_to_update.height = _height
         db.session.commit()
-    #
-    # def replace_player(_isbn, _name, _price):
-    #     player_to_replace = Player.query.filter_by(isbn=_isbn).first()
-    #     player_to_replace.price = _price
-    #     player_to_replace.name = _name
-    #     db.session.commit()
 
     def __repr__(self):
         player_object = {
@@ -126,9 +122,12 @@ class Stats(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     points = db.Column(db.Integer)
     stat_owner = db.Column(db.String(80), db.ForeignKey('players.playerId'), nullable=False)
+    game_owner = db.Column(db.String(80), db.ForeignKey('games.gameId'), nullable=False)
 
     def json(self):
         return {
+            'game_owner': self.game_owner,
+            'stat_owner': self.stat_owner,
             'points': self.points
         }
 
@@ -139,8 +138,9 @@ class Stats(db.Model):
         player_to_find = Player.query.filter_by(playerId=_playerId).first()
         return ['playerProfile',[Player.json(player_to_find)]] + ['stats', [Stats.json(stat) for stat in player_to_find.playerStats]]
 
-    def add_player_stats(_points, _stat_owner):
-        new_stats = Stats(points=_points, stat_owner=_stat_owner)
+    def add_player_stats(_stat_owner, _game_owner):
+        _points = 0
+        new_stats = Stats(stat_owner=_stat_owner, game_owner=_game_owner, points=_points)
         db.session.add(new_stats)
         db.session.commit()
 
